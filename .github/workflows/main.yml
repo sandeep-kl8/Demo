@@ -1,0 +1,55 @@
+name: Installer Build
+
+on:
+  workflow_run:
+    workflows:
+      - "RU1 Build"
+      - "RU2 Build"
+      - "RU3 Build"
+    types:
+      - completed
+
+jobs:
+  build-installer:
+    if: >
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Download RU1 Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ru1-artifact
+          path: artifacts/ru1
+
+      - name: Download RU2 Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ru2-artifact
+          path: artifacts/ru2
+
+      - name: Download RU3 Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ru3-artifact
+          path: artifacts/ru3
+
+      - name: Verify Artifacts
+        run: |
+          ls -R artifacts
+
+      - name: Build Installer
+        run: |
+          mkdir installer-output
+          echo "Combining RU1, RU2, RU3 artifacts..."
+          cp -r artifacts/* installer-output/
+          tar -czvf installer.tar.gz installer-output
+
+      - name: Upload Installer Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: final-installer
+          path: installer.tar.gz
